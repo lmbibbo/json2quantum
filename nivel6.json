@@ -1,0 +1,29 @@
+{
+    "level": 6,
+    "qubits": 4,
+    "basis": [
+        "CNOT",
+        "Ry",
+        "Rz",
+        "X"
+    ],
+    "operations": [
+        {
+            "gate": {
+                "name": "Rz",
+                "target": 2,
+                "parameter": 0.7854,
+                "controls": []
+            }
+        },
+        {
+            "gate": {
+                "name": "CNOT",
+                "target": 2,
+                "controls": [
+                    0
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,74 @@
+# ── Entornos virtuales ──────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.env
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+MANIFEST
+
+# ── Jupyter / Notebooks ──────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+# Descomenta si no quieres versionar los outputs de las celdas:
+# *.ipynb
+
+# ── Tests y cobertura ────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# ── Tipado / Linters ─────────────────────────────────────────────────────────
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+.ruff_cache/
+
+# ── Distribución / Packaging ──────────────────────────────────────────────────
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ── IDEs y editores ───────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Secrets y configuración local ────────────────────────────────────────────
+.env
+.env.*
+secrets.json
+config.local.*
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
