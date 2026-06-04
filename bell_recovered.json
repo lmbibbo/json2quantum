@@ -1,0 +1,28 @@
+{
+  "level": 99,
+  "qubits": 2,
+  "basis": [
+    "CNOT",
+    "H"
+  ],
+  "operations": [
+    {
+      "gate": {
+        "name": "H",
+        "label": "H",
+        "target": 0,
+        "controls": []
+      }
+    },
+    {
+      "gate": {
+        "name": "CNOT",
+        "label": "CNOT",
+        "target": 1,
+        "controls": [
+          0
+        ]
+      }
+    }
+  ]
+}
