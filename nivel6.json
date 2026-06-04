@@ -24,6 +24,24 @@
                     0
                 ]
             }
+        },
+        {
+            "gate": {
+                "name": "H",
+                "label": "H",
+                "target": 0,
+                "controls": []
+            }
+        },
+        {
+            "gate": {
+                "name": "CNOT",
+                "label": "CNOT",
+                "target": 1,
+                "controls": [
+                    0
+                ]
+            }
         }
     ]
 }
