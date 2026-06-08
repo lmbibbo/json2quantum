@@ -28,4 +28,4 @@ jupyter lab
 Notas
 
 - Los archivos `.json` en la raíz son datos, ejemplos o resultados auxiliares. No son necesarios para empezar con `nivel1.ipynb` y `nivel2.ipynb` salvo que una notebook lo indique explícitamente.
-- Si quieres, puedo generar un `requirements.txt` con las dependencias detectadas o una lista detallada de archivos auxiliares y su propósito.
+
