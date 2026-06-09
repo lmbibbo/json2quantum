@@ -306,7 +306,7 @@ def apply_controlled_u(qc: QuantumCircuit, u: np.ndarray, g_m_minus_1: int, g_m:
             
     if x_flips:
         qc.x(x_flips)
-        
+
     if controls:
         c_u = UnitaryGate(u).control(len(controls))
         qc.append(c_u, controls + [target_bit])
@@ -315,6 +315,47 @@ def apply_controlled_u(qc: QuantumCircuit, u: np.ndarray, g_m_minus_1: int, g_m:
         
     if x_flips:
         qc.x(x_flips)
+
+
+def mcx_decompose_with_ancillas(qc: QuantumCircuit, controls: list[int], target: int, ancillas: list[int]) -> None:
+    """
+    Descompone una compuerta multicontrolada C^k(X) en Toffolis usando ancillas.
+
+    Para k=3, usa una única ancilla:
+        CCX(c0, c1, ancilla)
+        CCX(ancilla, c2, target)
+        CCX(c0, c1, ancilla)
+
+    Para k>3, requiere al menos k-2 ancillas adicionales.
+    """
+    n = len(controls)
+    if n == 0:
+        qc.x(target)
+        return
+    if n == 1:
+        qc.cx(controls[0], target)
+        return
+    if n == 2:
+        qc.ccx(controls[0], controls[1], target)
+        return
+
+    required_ancillas = n - 2
+    if len(ancillas) < required_ancillas:
+        raise ValueError(
+            f"Para C^{n}(X) se requieren al menos {required_ancillas} ancillas, "
+            f"pero se recibieron {len(ancillas)}."
+        )
+
+    qc.ccx(controls[0], controls[1], ancillas[0])
+    for i in range(2, n - 1):
+        qc.ccx(controls[i], ancillas[i - 2], ancillas[i - 1])
+
+    qc.ccx(controls[-1], ancillas[n - 3], target)
+
+    for i in reversed(range(2, n - 1)):
+        qc.ccx(controls[i], ancillas[i - 2], ancillas[i - 1])
+    qc.ccx(controls[0], controls[1], ancillas[0])
+
 
 def decompose_unitary_to_mc(V_in: np.ndarray) -> QuantumCircuit:
     """
@@ -362,23 +403,74 @@ def compare_matrix(M1: np.ndarray, M2: np.ndarray) -> bool:
     # 1. Comprobar si tienen el mismo tamaño (mismos qubits)
     if M1.shape != M2.shape:
         print("Las matrices son de distinto tamaño (distinto número de qubits). ¡No pueden ser iguales!")
-    else:
-    # 2. Comprobar igualdad exacta
-        exactamente_iguales = np.allclose(M1, M2, atol=1e-8)
-        print(f"¿Son exactamente idénticas elemento por elemento?: {exactamente_iguales}")
+        return False
 
-        # 3. Comprobar igualdad SALVO por una fase global (lo más correcto en cuántica)
-        if not exactamente_iguales:
-            dim = M1.shape[0]
-            # Multiplicamos la inversa conjugada de U6 por U2
-            prod = np.conj(M1).T @ U2
-            # Tomamos la fase del primer elemento que no sea cero
-            phase = prod[0, 0]
-        
-            # Verificamos si el producto es igual a la matriz Identidad multiplicada por la fase
-            eq_fase_global = np.allclose(prod, phase * np.eye(dim), atol=1e-8)
-            print(f"¿Son equivalentes salvo una fase global?: {eq_fase_global}")
+    # 2. Comprobar igualdad exacta
+    exactamente_iguales = np.allclose(M1, M2, atol=1e-8)
+    print(f"¿Son exactamente idénticas elemento por elemento?: {exactamente_iguales}")
+
+    # 3. Comprobar igualdad SALVO por una fase global (lo más correcto en cuántica)
+    if not exactamente_iguales:
+        dim = M1.shape[0]
+        prod = np.conj(M1).T @ M2
+        phase = prod[0, 0]
+        eq_fase_global = np.allclose(prod, phase * np.eye(dim), atol=1e-8)
+        print(f"¿Son equivalentes salvo una fase global?: {eq_fase_global}")
+
     return exactamente_iguales
+
+
+def rewrite_mcx_with_ancillas(circuit: QuantumCircuit, num_extra_ancillas: int | None = None) -> QuantumCircuit:
+    """
+    Reescribe cada MCX presente en el circuito como una secuencia de Toffolis
+    usando ancillas adicionales.
+
+    Este nivel corresponde a la descomposición recursiva de C^k(X).
+    """
+    from qiskit.circuit.library import MCXGate
+
+    n_orig = circuit.num_qubits
+    max_ctrl = 0
+    for instr in circuit.data:
+        gate = instr.operation
+        if isinstance(gate, MCXGate):
+            max_ctrl = max(max_ctrl, gate.num_ctrl_qubits)
+
+    if max_ctrl <= 2:
+        return circuit.copy()
+
+    required_ancillas = max_ctrl - 2
+    if num_extra_ancillas is not None:
+        if num_extra_ancillas < required_ancillas:
+            raise ValueError(
+                f"Se requieren al menos {required_ancillas} ancillas para descomponer MCX con {max_ctrl} controles, "
+                f"pero se recibieron {num_extra_ancillas}."
+            )
+        required_ancillas = num_extra_ancillas
+
+    qc_new = QuantumCircuit(n_orig + required_ancillas, name="nivel4")
+    ancillas = list(range(n_orig, n_orig + required_ancillas))
+
+    for instr in circuit.data:
+        gate = instr.operation
+        qubit_indices = []
+        for q in instr.qubits:
+            for i, qreg_qubit in enumerate(circuit.qregs[0]):
+                if q == qreg_qubit:
+                    qubit_indices.append(i)
+                    break
+
+        if isinstance(gate, MCXGate):
+            controls = qubit_indices[:-1]
+            target = qubit_indices[-1]
+            if len(controls) <= 2:
+                qc_new.append(gate, qubit_indices)
+            else:
+                mcx_decompose_with_ancillas(qc_new, controls, target, ancillas[: len(controls) - 2])
+        else:
+            qc_new.append(gate, qubit_indices)
+
+    return qc_new
 
 
 def rewrite_cn_minus_1_u_with_ancilla(circuit: QuantumCircuit) -> QuantumCircuit:
