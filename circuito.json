@@ -27,9 +27,10 @@
         },
         {
             "gate": {
-                "name": "H",
-                "label": "H",
-                "target": 0,
+                "name": "Ry",
+                "label": "Ry",
+                "target": 1,
+                "parameter": 0.7854,
                 "controls": []
             }
         },
