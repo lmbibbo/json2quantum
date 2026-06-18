@@ -370,6 +370,42 @@ def mcx_decompose_with_ancillas(qc: QuantumCircuit, controls: list[int], target:
     qc.ccx(controls[0], controls[1], ancillas[0])
 
 
+def cancel_consecutive_x(circuit: QuantumCircuit) -> QuantumCircuit:
+    """
+    Recorre el circuito y elimina compuertas X consecutivas sobre el mismo qubit
+    que no tengan compuertas intermedias actuando sobre él.
+    """
+    optimized_instructions = []
+    
+    for instr in circuit.data:
+        gate = instr.operation
+        qubits = instr.qubits
+        
+        # Si es una compuerta X de un solo qubit
+        if gate.name == 'x' and len(qubits) == 1:
+            q = qubits[0]
+            found_cancel = False
+            # Buscamos de atrás hacia adelante la última instrucción que toca a este qubit
+            for i in reversed(range(len(optimized_instructions))):
+                prev_instr = optimized_instructions[i]
+                if q in prev_instr.qubits:
+                    # Si la última compuerta que tocó al qubit fue otra X, se cancelan
+                    if prev_instr.operation.name == 'x':
+                        optimized_instructions.pop(i)
+                        found_cancel = True
+                    break
+            
+            if not found_cancel:
+                optimized_instructions.append(instr)
+        else:
+            optimized_instructions.append(instr)
+            
+    # Reconstruimos el circuito optimizado
+    new_circuit = circuit.copy()
+    new_circuit.data = optimized_instructions
+    return new_circuit
+
+
 def decompose_unitary_to_mc(V_in: np.ndarray) -> QuantumCircuit:
     """
     Función principal: toma una unitaria arbitraria y devuelve un QuantumCircuit 
@@ -409,7 +445,8 @@ def decompose_unitary_to_mc(V_in: np.ndarray) -> QuantumCircuit:
             target_bit = int(math.log2(g_k ^ g_k_plus_1))
             apply_mcx_for_swap(qc, g_k, target_bit, num_qubits)
             
-    return qc
+    return cancel_consecutive_x(qc)
+
 
 
 def compare_matrix(M1: np.ndarray, M2: np.ndarray) -> bool:
