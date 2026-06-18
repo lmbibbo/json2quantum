@@ -34,6 +34,19 @@ def unitary_to_json(U: np.ndarray, path: str | Path) -> Path:
     return output
 
 
+### `json_to_unitary(path)` Importa la matriz unitaria desde un archivo JSON.
+def json_to_unitary(path: str | Path) -> np.ndarray:
+    """
+    Lee una matriz unitaria desde un archivo JSON con formato de partes real e imaginaria
+    separadas y la reconstruye como un np.ndarray complejo.
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        payload = json.load(f)
+    arr = np.array(payload)
+    return arr[..., 0] + 1j * arr[..., 1]
+
+
+
 ### `are_equivalent(qc_a, qc_b)` Compara dos circuitos por su unitaria (útil para verificar optimizaciones).
 def are_equivalent(qc_a: QuantumCircuit, qc_b: QuantumCircuit, atol: float = 1e-8) -> bool:
     """
